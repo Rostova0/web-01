@@ -1,4 +1,5 @@
 import template from "../views/game.html";
+import { Component } from "./component";
 import { parseUrl } from "./utils";
 
 import back from "/src/assets/cards/back.png";
@@ -41,58 +42,51 @@ var CARD_TEMPLATE = ""
     },
   };
 
-  // TODO #class: use the ES6 class keyword
-  // TODO #extends: extend Component
   /* class GameComponent constructor */
-  export function GameComponent() {
-    // TODO #extends: call super(template)
+  export class GameComponent extends Component{
+    
     // gather parameters from URL
-    var params = parseUrl();
+    constructor() {
+      super(template)
+      var params = parseUrl();
 
-    // save player name & game ize
-    this.template=template;
-    this._name = params.name;
-    this._size = parseInt(params.size) || 9;
-    this._flippedCard = null;
-    this._matchedPairs = 0;
-  }
+      // save player name & game size
+      this._name = params.name;
+      this._size = parseInt(params.size) || 9;
+      this._flippedCard = null;
+      this._matchedPairs = 0;
+    }
 
-  // put component in global scope, to be runnable right from the HTML.
-  // TODO #class: turn function into a method of GameComponent
-  /* method GameComponent.init */
-  GameComponent.prototype.init = function init() {
-    // fetch the cards configuration from the server
-    this.fetchConfig(
-      // TODO #arrow-function: use arrow function instead.
-      function (config) {
-        this._config = config;
-        this._boardElement = document.querySelector(".cards");
+    init(){
+      this.fetchConfig(
+        // TODO #arrow-function: use arrow function instead.
+        function (config) {
+          this._config = config;
+          this._boardElement = document.querySelector(".cards");
+  
+          // create cards out of the config
+          this._cards = [];
+          // TODO #functional-programming: use Array.map() instead.
+          for (var i in this._config.ids) {
+            this._cards[i] = new CardComponent(this._config.ids[i]);
+          }
+  
+          // TODO #functional-programming: use Array.forEach() instead.
+          // TODO #let-const: replace var with let.
+          for (var i in this._cards) {
+            var card = this._cards[i];
+  
+            // TODO #let-const: extract function _appendCard (ie: copy its body here and remove the function)
+            this._appendCard(card);
+          }
+  
+          this.start();
+        }.bind(this)
+      );
+    }
 
-        // create cards out of the config
-        this._cards = [];
-        // TODO #functional-programming: use Array.map() instead.
-        for (var i in this._config.ids) {
-          this._cards[i] = new CardComponent(this._config.ids[i]);
-        }
-
-        // TODO #functional-programming: use Array.forEach() instead.
-        // TODO #let-const: replace var with let.
-        for (var i in this._cards) {
-          var card = this._cards[i];
-
-          // TODO #let-const: extract function _appendCard (ie: copy its body here and remove the function)
-          this._appendCard(card);
-        }
-
-        this.start();
-      }.bind(this)
-    );
-  };
-  // TODO #class: turn function into a method of GameComponent
-
-  /* method GameComponent._appendCard */
-  GameComponent.prototype._appendCard = function _appendCard(card) {
-    this._boardElement.appendChild(card.getElement());
+     _appendCard(card) {
+      this._boardElement.appendChild(card.getElement());
 
     card.getElement().addEventListener(
       "click",
@@ -101,94 +95,76 @@ var CARD_TEMPLATE = ""
         this._flipCard(card);
       }.bind(this)
     );
-  };
-
-  // TODO #class: turn function into a method of GameComponent
-  /* method GameComponent.start */
-  GameComponent.prototype.start = function start() {
+   }
+   start() {
     this._startTime = Date.now();
     var seconds = 0;
     // TODO #template-literals:  use template literals (backquotes)
     document.querySelector("nav .navbar-title").textContent =
-      "Player: " + this._name + ". Elapsed time: " + seconds++;
+        `Player: ${this._name}. Elapsed time: ${seconds++}`;
 
     this._timer = setInterval(
-      // TODO #arrow-function: use arrow function instead.
-      function () {
-        // TODO #template-literals:  use template literals (backquotes)
-        document.querySelector("nav .navbar-title").textContent =
-          "Player: " + this._name + ". Elapsed time: " + seconds++;
-      }.bind(this),
-      1000
+        // TODO #arrow-function: use arrow function instead.
+        () => {
+            // TODO #template-literals:  use template literals (backquotes)
+            document.querySelector("nav .navbar-title").textContent =
+                `Player: ${this._name}. Elapsed time: ${seconds++}`;
+        },
+        1000
     );
-  };
-
-  // TODO #class: turn function into a method of GameComponent
-  /* method GameComponent.fetchConfig */
-  GameComponent.prototype.fetchConfig = function fetchConfig(cb) {
+  }
+  fetchConfig(cb) {
     var xhr =
-      typeof XMLHttpRequest != "undefined"
-        ? new XMLHttpRequest()
-        : new ActiveXObject("Microsoft.XMLHTTP");
+        typeof XMLHttpRequest != "undefined"
+            ? new XMLHttpRequest()
+            : new ActiveXObject("Microsoft.XMLHTTP");
 
     // TODO #template-literals:  use template literals (backquotes)
-    xhr.open("get", environment.api.host + "/board?size=" + this._size, true);
+    xhr.open("get", `${environment.api.host}/board?size=${this._size}`, true);
 
     // TODO #arrow-function: use arrow function instead.
-    xhr.onreadystatechange = function () {
-      var status;
-      var data;
-      // https://xhr.spec.whatwg.org/#dom-xmlhttprequest-readystate
-      if (xhr.readyState == 4) {
-        // `DONE`
-        status = xhr.status;
-        if (status == 200) {
-          data = JSON.parse(xhr.responseText);
-          cb(data);
-        } else {
-          throw new Error(status);
+    xhr.onreadystatechange = () => {
+        var status;
+        var data;
+        // https://xhr.spec.whatwg.org/#dom-xmlhttprequest-readystate
+        if (xhr.readyState == 4) {
+            // `DONE`
+            status = xhr.status;
+            if (status == 200) {
+                data = JSON.parse(xhr.responseText);
+                cb(data);
+            } else {
+                throw new Error(status);
+            }
         }
-      }
     };
     xhr.send();
-  };
-
-  // TODO #class: turn function into a method of GameComponent
-  /* method GameComponent.goToScore */
-  GameComponent.prototype.goToScore = function goToScore() {
+  }
+  goToScore() {
     var timeElapsedInSeconds = Math.floor(
-      (Date.now() - this._startTime) / 1000
+        (Date.now() - this._startTime) / 1000
     );
     clearInterval(this._timer);
 
     setTimeout(
-      // TODO #arrow-function: use arrow function instead.
-      function () {
-        // TODO #spa: replace with './#score'
-        var scorePage = "./#score";
-        // TODO #template-literals:  use template literals (backquotes)
-        window.location =
-          scorePage +
-          "?name=" +
-          this._name +
-          "&size=" +
-          this._size +
-          "&time=" +
-          timeElapsedInSeconds;
-      }.bind(this),
-      750
+        // TODO #arrow-function: use arrow function instead.
+        () => {
+            // TODO #spa: replace with './#score'
+            var scorePage = "./#score";
+            // TODO #template-literals:  use template literals (backquotes)
+            window.location =
+                `${scorePage}?name=${this._name}&size=${this._size}&time=${timeElapsedInSeconds}`;
+        },
+        750
     );
-  };
-
-  // TODO #class: turn function into a method of GameComponent
-  /* method GameComponent._flipCard */
-  GameComponent.prototype._flipCard = function _flipCard(card) {
+  }
+  _flipCard(card) {
     if (this._busy) {
-      return;
+        return;
     }
 
     if (card.flipped) {
-      return;
+        return;
     }
 
     // flip the card
@@ -196,44 +172,91 @@ var CARD_TEMPLATE = ""
 
     // if flipped first card of the pair
     if (!this._flippedCard) {
-      // keep this card flipped and wait for the second card of the pair
-      this._flippedCard = card;
+        // keep this card flipped and wait for the second card of the pair
+        this._flippedCard = card;
     } else {
-      // second card of the pair flipped...
+        // second card of the pair flipped...
 
-      // if cards are the same
-      if (card.equals(this._flippedCard)) {
-        this._flippedCard.matched = true;
-        card.matched = true;
-        this._matchedPairs += 1;
-
-        // reset flipped card for the next turn.
-        this._flippedCard = null;
-
-        if (this._matchedPairs === this._size) {
-          this.goToScore();
-        }
-      } else {
-        this._busy = true;
-
-        // cards did not match
-        // wait a short amount of time before hiding both cards
-        setTimeout(
-          // TODO #arrow-function: use arrow function instead.
-          function () {
-            // hide the cards
-            this._flippedCard.flip();
-            card.flip();
-            this._busy = false;
+        // if cards are the same
+        if (card.equals(this._flippedCard)) {
+            this._flippedCard.matched = true;
+            card.matched = true;
+            this._matchedPairs += 1;
 
             // reset flipped card for the next turn.
             this._flippedCard = null;
-          }.bind(this),
-          500
-        );
-      }
+
+            if (this._matchedPairs === this._size) {
+                this.goToScore();
+            }
+        } else {
+            this._busy = true;
+
+            // cards did not match
+            // wait a short amount of time before hiding both cards
+            setTimeout(
+                // TODO #arrow-function: use arrow function instead.
+                () => {
+                    // hide the cards
+                    this._flippedCard.flip();
+                    card.flip();
+                    this._busy = false;
+
+                    // reset flipped card for the next turn.
+                    this._flippedCard = null;
+                },
+                500
+            );
+        }
     }
-  };
+  }
+}
+  class CardComponent extends Component {
+
+    constructor(id) {
+        // is this card flipped?
+        super(template)
+        this._flipped = false;
+
+        // has the matching card been discovered already?
+        this.matched = false;
+
+        this._elt = document.createElement("div");
+        this._elt.innerHTML = this.template;
+        this._elt = this._elt.firstElementChild;
+        this._id = id;
+
+        this._imageElt = this.getElement().querySelector(".card-wrapper");
+        this._imageElt.querySelector("img.front-face").src =
+            CARDS_IMAGE[this._id + 1];
+        this._imageElt.querySelector("img.back-face").src = CARDS_IMAGE[0];
+    }
+
+    // Define the flipped property as a getter method
+    get flipped() {
+        return this._flipped;
+    }
+
+    // TODO #class: turn function into a method of CardComponent
+    equals(card) {
+        return card._id === this._id;
+    }
+
+    // TODO #class: turn function into a method of CardComponent
+    getElement() {
+        return this._elt;
+    }
+
+    // TODO #class: turn function into a method of CardComponent
+    flip() {
+        this._imageElt.classList.toggle("flip");
+        this._flipped = !this._flipped;
+    }
+}
+
+
+
+  
 
   // TODO #card-component: Change images location to /app/components/game/card/assets/***.png
   // TODO #import-assets: use ES default import to import images.
@@ -250,54 +273,3 @@ var CARD_TEMPLATE = ""
     "/src/assets/cards/card-8.png",
     "/src/assets/cards/card-9.png",
   ];
-
-  // TODO #class: use the ES6 class keyword
-  // TODO #extends: extends Component
-  /* class CardComponent constructor */
-  function CardComponent(id) {
-    // TODO #extends: call super(CARD_TEMPLATE)
-    // is this card flipped?
-    this._flipped = false;
-    this.template = CARD_TEMPLATE;
-
-    // has the matching card has been discovered already?
-    this.matched = false;
-
-    this._elt = document.createElement("div");
-    this._elt.innerHTML = this.template;
-    this._elt = this._elt.firstElementChild;
-    this._id = id;
-
-    this._imageElt = this.getElement().querySelector(".card-wrapper");
-    this._imageElt.querySelector("img.front-face").src =
-      CARDS_IMAGE[this._id + 1];
-    this._imageElt.querySelector("img.back-face").src = CARDS_IMAGE[0];
-  }
-
-  /* method CardComponent.getElement */
-  CardComponent.prototype.getElement = function getElement() {
-    return this._elt;
-  };
-
-  // TODO #class: turn function into a method of CardComponent
-  /* method CardComponent.flip */
-  CardComponent.prototype.flip = function flip() {
-    this._imageElt.classList.toggle("flip");
-    this._flipped = !this._flipped;
-  };
-
-  // TODO #class: turn function into a method of CardComponent
-  /* method CardComponent.equals */
-  CardComponent.prototype.equals = function equals(card) {
-    return card._id === this._id;
-  };
-
-  // TODO #class: turn function into a method of CardComponent
-  /* CardComponent.get flipped() */
-  Object.defineProperties(CardComponent.prototype, {
-    flipped: {
-      get: function () {
-        return this._flipped;
-      },
-    },
-  });
