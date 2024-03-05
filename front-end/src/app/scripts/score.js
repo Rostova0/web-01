@@ -10,7 +10,7 @@ import { Component } from "./component";
       // Since there is no superclass, we won't call super()
 
       // Parse URL parameters
-      var params = parseUrl();
+      let params = parseUrl();
 
       // TODO #import-html: assign template to this.template
       this.template = template;
