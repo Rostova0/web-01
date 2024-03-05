@@ -1,4 +1,4 @@
-// TODO #import-html: use ES default imports to import game.html as template
+import template from "../views/game.html";
 import { parseUrl } from "./utils";
 
 var CARD_TEMPLATE = ""
@@ -23,8 +23,8 @@ var CARD_TEMPLATE = ""
     // gather parameters from URL
     var params = parseUrl();
 
-    // TODO #import-html: assign template to this.template
     // save player name & game ize
+    this.template=template;
     this._name = params.name;
     this._size = parseInt(params.size) || 9;
     this._flippedCard = null;

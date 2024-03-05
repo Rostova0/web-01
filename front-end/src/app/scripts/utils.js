@@ -1,4 +1,3 @@
-// TODO #export-functions: export function parseUrl
 export function parseUrl(url = window.location.href) {
   var query = url.split("?")[1] || "";
   var result = {};
